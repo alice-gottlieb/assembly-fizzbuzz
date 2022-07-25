@@ -5,8 +5,6 @@ section .bss
    num resb 1 ; byte to store num
 
 section .data       
-    numMsg db '1'
-    lenNum equ $ - numMsg
     lb db 0xA, 0xD
 
 _start:
