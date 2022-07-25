@@ -1,6 +1,6 @@
 ; DONE: Make MOD a macro
 ; DONE: numToAscii
-; TODO: Fizz the buzz
+; DONE: Fizz the buzz
 
 %macro print 2 
    ; print msg %1 of length %2
@@ -36,14 +36,14 @@ section .bss
 
 section .data       
     lb db 0xA, 0xD
-    fizzNum db 2
+    fizzNum db 5
     buzzNum db 3
     fizzMsg db 'fizz' ;, 0xA, 0xD
     buzzMsg db 'buzz' ;, 0xA, 0xD
     len equ $ - buzzMsg
 
 _start:
-    MOV ECX, 9 ; set number of loops
+    MOV ECX, 98 ; set number of loops
     MOV EAX, 1 ; hold characaters for the numbers
 
     CALL fizzbuzz
@@ -83,10 +83,6 @@ numToAscii:
    ; Tens plae - CH
    ; Ones place - CL
 
-   ;MOV [a], EAX
-   ;MOV [b], EBX
-   ;MOV [c], ECX
-   ;MOV [d], EDX
    MOV [n], AL
 
    CMP AL, 10
@@ -153,7 +149,7 @@ fizzbuzz:
       DEC ECX
       MOV [c], ECX
       CMP ECX, 0 
-      JGE fizzbuzz 
+      JG fizzbuzz 
       RET
    fizz:
       print fizzMsg, len
