@@ -1,5 +1,5 @@
 ; DONE: Make MOD a macro
-; TODO: asciiToNumbers
+; DONE: numToAscii
 ; TODO: Fizz the buzz
 
 %macro print 2 
@@ -22,43 +22,6 @@
    MOV %3, AH 
 %endmacro
 
-%macro numToAscii 2
-   ; convert %1 to 4 ascii bytes
-   ; save to 4 bytes of memory at [%2]
-   print "M", 1
-   MOV byte [%2], 0
-   CMP byte [%1], 10
-   JL Low
-   CMP byte [%1], 100
-   JL Mid
-   CMP word [%1], 1000
-   JL Lar
-   JGE XL
-   XL:
-      modByte %1, 1000, [%2+8]
-      MOV [%2], AL
-      modByte [%2+8], 100, [%2+16]
-      MOV [%2+8], AL
-      modByte [%2+16], 10, [%2+24]
-      MOV [%2+16], AL
-      RET
-   Lar:
-      modByte %1, 100, [%2+16]
-      MOV [%2+8], AL
-      modByte [%2+16], 10, [%2+24]
-      MOV [%2+16], AL
-      RET
-   Mid:
-      modByte %1, 10, [%2+24] 
-      MOV [%2+16], AL ; quotient from the IDIV in modByte is at AL
-      RET
-   Low:
-      MOV AL, %1
-      ADD AL, 0x30
-      MOV [%2+24], AL
-      RET
-%endmacro
-
 section .text
     global _start
     
@@ -70,6 +33,7 @@ section .bss
    d resb 4 
    ascii resb 4
    rem resb 1 ; remainder of mod
+   n resw 1
 
 section .data       
     lb db 0xA, 0xD
@@ -83,12 +47,16 @@ _start:
     ADD AH, 0x30
     MOV [rem], AH
     print rem, 1
-    print rem, 1
     CALL linebreak
 
     ;print ascii, 4
-    numToAscii 9, ascii 
-    print ascii, 4
+    MOV AL, 95
+    MOV ECX, 0
+    CALL numToAscii 
+    MOV [n], CH
+    MOV [rem], CL
+    print n, 1
+    print rem, 1
     CALL linebreak
       
     MOV EAX, 1 ; sys_exit
@@ -98,35 +66,44 @@ _start:
 linebreak:
     print lb, 2
     RET
-    MOV EAX, 4
-    MOV EBX, 1
-    MOV ECX, lb
-    MOV EDX, 2
-    INT 0x80
 
-    RET
+numToAscii: 
+   ; convert AL to 3 ascii bytes
+   ; save to ECX
+   ; Tens plae - CH
+   ; Ones place - CL
 
-;numToAscii: ; convert EAX to 4 bytes of ascii numerals
-;   MOV [a], EAX
-;   MOV [b], EBX
-;   MOV [c], ECX
-;   MOV [d], EDX
-;
-;    MOV BL, 10
-;    DIV BL
-;    MOV ECX, 0
-;    MOV CH, AH
-;    ADD ECX, 0x30
-;    MOV EDX, 1
-;    MOV EBX, 1
-;    MOV EAX, 4
-;    INT 0x80
-;
-;    MOV EAX, [a]
-;    MOV EBX, [b]
-;    MOV ECX, [c]
-;    MOV EDX, [d]
-   
+   MOV [a], EAX
+   MOV [b], EBX
+   MOV [c], ECX
+   MOV [d], EDX
+   MOV [n], AL
+
+   CMP AL, 10
+   JL Low
+   CMP AL, 100
+   JL Mid
+   ;JGE Lar
+   ;Lar:
+   ;   modByte n, 100, CH
+   ;   MOV CL, AL
+   ;   ADD CL, 0x30
+   ;   modByte CH, 10, [ECX+24] 
+   ;   MOV CH, AL
+   ;   ADD CH, 0x30
+   ;   ADD byte [ECX+24], 0x30
+   ;   RET
+   Mid:
+     modByte [n], 10, CL 
+     ADD CL, 0x30
+     MOV CH, AL ; quotient from the IDIV in modByte is at AL
+     ADD CH, 0x30
+     RET
+   Low:
+     MOV CL, [n]
+     ADD CL, 0x30
+     RET
+
 looper:
    MOV [num], EAX ; move only higher byte of EAX
    MOV EDX, 1
@@ -142,9 +119,5 @@ looper:
    INC EAX
    ADD EAX, 0x30
    POP ECX ; retrieve old ECX value
-   ; MOV EAX, numMsg
-   ; INC EAX
-   ; MOV numMsg, EAX
-   ; RET
    LOOP looper
    RET
