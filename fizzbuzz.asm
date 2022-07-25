@@ -1,5 +1,24 @@
+%macro print 2 
+   mov   eax, 4
+   mov   ebx, 1
+   mov   ecx, %1
+   mov   edx, %2
+   INT   0x80
+%endmacro
+
+%macro modByte 3
+   MOV EAX, %1
+   MOV EBX, %2
+   IDIV BL
+   MOV [%3], AH 
+%endmacro
+
+
 section .text
     global _start
+    ; DONE: Make MOD a macro
+    ; TODO: asciiToNumbers
+    ; TODO: Fizz the buzz
 
 section .bss
    num resb 1 ; byte to store num
@@ -17,8 +36,13 @@ _start:
     MOV ECX, 5 ; set number of loops
     MOV EAX, 35 ; hold characaters for the numbers
 
-    CALL mod
-    
+    modByte 1279, 10, rem
+    MOV AH, [rem]
+    ADD AH, 0x30
+    MOV [rem], AH
+    print rem, 1
+    CALL linebreak
+      
     MOV EAX, 1 ; sys_exit
     INT 0x80
     HLT
@@ -41,23 +65,6 @@ linebreak:
     POP EAX
 
     RET
-
-mod: ; takes ax mod bl and puts remaidner in res as a string
-   MOV EAX, 1279 ; max is 1279, since that gives rem 128-1
-   MOV EBX, 10 
-   IDIV BL
-   ADD	AH, 0x30
-   MOV  [rem], AH
-
-   MOV EDX, 1
-   MOV ECX, rem
-   MOV EBX, 1
-   MOV EAX, 4
-   INT 0x80
-
-   CALL linebreak
-
-   RET
 
  numToAscii: ; convert EAX to 4 bytes of ascii numerals
     MOV [a], EAX
