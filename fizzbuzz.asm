@@ -38,13 +38,13 @@ section .data
     lb db 0xA, 0xD
     fizzNum db 5
     buzzNum db 3
-    fizzMsg db 'fizz' ;, 0xA, 0xD
-    buzzMsg db 'buzz' ;, 0xA, 0xD
+    fizzMsg db 'fizz'
+    buzzMsg db 'buzz'
     len equ $ - buzzMsg
 
 _start:
     MOV ECX, 98 ; set number of loops
-    MOV EAX, 1 ; hold characaters for the numbers
+    MOV EAX, 1 ; number to print each iteration when no fizz or buzz
 
     CALL fizzbuzz
 
@@ -52,6 +52,7 @@ _start:
     INT 0x80
     HLT
 
+    ; Extra tests if you comment out the HLT above
     modByte 78, 10, [rem]
     MOV AH, [rem]
     ADD AH, 0x30
@@ -89,7 +90,6 @@ numToAscii:
    JL Low
    CMP AL, 100
    JL Mid
-   ;JGE Lar
    ;Lar:
    ;   modByte n, 100, CH
    ;   MOV CL, AL
@@ -100,9 +100,9 @@ numToAscii:
    ;   ADD byte [ECX+24], 0x30
    ;   RET
    Mid:
-     modByte [n], 10, CL 
-     ADD CL, 0x30
-     MOV CH, AL ; quotient from the IDIV in modByte is at AL
+     modByte [n], 10, CL ; put ones digit in CL
+     ADD CL, 0x30 ; convert CL to ascii
+     MOV CH, AL ; quotient from the IDIV in modByte is at AL, this is the tens place
      ADD CH, 0x30
      RET
    Low:
@@ -111,52 +111,54 @@ numToAscii:
      RET
 
 fizzbuzz:
-   ;MOV [num], EAX ; move only higher byte of EAX
-   MOV [c], ECX
+   MOV [c], ECX ; save registers
    MOV [a], EAX 
-   modByte [a], [fizzNum], [rem]
+   modByte [a], [fizzNum], [rem] ; rem = a mod fizzNum
    CMP byte [rem], 0
-   JE fizz
-   modByte [a], [buzzNum], [rem]
+   JE fizz ; print fizz if (a mod fizzNum) == 0
+   modByte [a], [buzzNum], [rem] ; check buzz
    CMP byte [rem], 0
    JE buzz
 
    MOV EAX, [a]
-   CMP EAX, 10
+   CMP EAX, 10 ; check number of decimal digits in EAX
    JL oneDigit
-   CALL numToAscii
-   MOV [n], CH
-   MOV [rem], CL
+   CALL numToAscii ; convert EAX to 2-digit decimal ascii
+   MOV [n], CH ; tens place
+   MOV [rem], CL ; ones place
    JMP numPrint
 
    numPrint:
+      ; print tens place then ones place
       print n, 1
       print rem, 1
       JMP cont
 
    oneDigit:
-      ADD EAX, 0x30
+      ADD EAX, 0x30 ; convert EAX to ascii
       MOV [printWord], EAX
       print printWord, 1
       JMP cont 
 
    cont:
       CALL linebreak
-      MOV EAX, [a]
+      MOV EAX, [a] ; recall original value for EAX
       INC EAX
       MOV [a], EAX
-      MOV ECX, [c]
-      DEC ECX
+      MOV ECX, [c] ; recall original value for ECX
+      DEC ECX ; loop counter
       MOV [c], ECX
-      CMP ECX, 0 
+      CMP ECX, 0 ; break loop if ECX reaches 0
       JG fizzbuzz 
       RET
    fizz:
       print fizzMsg, len
+      ; check buzz
       modByte [a], [buzzNum], [rem]
       CMP byte [rem], 0
       JE buzz
       JMP cont
    buzz:
       print buzzMsg, len
+      ; no need to check fizz
       JMP cont
